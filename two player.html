@@ -1,0 +1,324 @@
+<!-- 
+Citations: 
+1) http://blog.mailson.org/2013/02/simple-pong-game-using-html5-and-canvas/ -- example game
+2) view-source:https://output.jsbin.com/takelaq -- example game
+3) https://github.com/maxwihlborg/youtube-tutorials/blob/master/pong/index.html -- example game
+4) http://www.w3schools.com/games/default.asp -- game reference
+5) http://www.w3schools.com/tags/ref_canvas.asp -- canvas reference
+
+-->
+<html>
+<head>
+<title>Sri's 2 PLAYER Pong game</title>
+<style>
+body 
+{
+	padding:0;
+	margin:0;	
+	overflow:hidden;
+}
+</style>
+<script>
+//citation: http://www.w3schools.com/games/game_canvas.asp
+
+//program starts on load
+window.onload = function()
+{
+	var canvas = document.getElementById("canvas");
+	var context = canvas.getContext("2d");
+	canvas.width = 1366;
+	canvas.height = 680;
+	//score variables
+	var score1 = 0;
+	var score2 =0;
+	//winner variables
+	var isWinner = false;
+	var winner = 0;
+	var flag = 0;
+	
+	//citation for control variables: Kousik Sundara Padmanabhan
+	var control = 
+	{ 
+		p1: {up:false, down:false}, p2: {up:false, down:false}
+	}
+	
+	//players as instance of bat
+	var player1 = new bat(1);
+	var player2 = new bat(2);
+	
+	//ball instance
+	var ball = new Ball();
+	
+	//loop for the game
+	setInterval(draw,33);
+
+	//citation for component drawing: http://www.w3schools.com/games/game_components.asp
+	//citation for bouncing: http://www.w3schools.com/games/game_bouncing.asp
+	//citation for speed: http://www.w3schools.com/games/game_movement.asp
+	//Ball class with attributes for ball
+	function Ball()
+	{
+		this.x = 683;
+		this.y = 340;
+		this.rad = 10;
+		//speed of ball in x and y direction
+		this.speedx;
+		this.speedy;
+		//speed chosen randomly
+		if(random(0,1) == 0)
+			this.speedx = -5;
+		else
+			this.speedx = 5;
+		if(random(0,1) == 0)
+			this.speedy = -5;
+		else
+			this.speedy = 5;
+		
+		//draws the ball onto the canvas
+		this.draw = function()
+		{
+			//citation for beginPath: http://www.w3schools.com/tags/canvas_beginpath.asp
+			context.beginPath();
+			context.fillStyle = "black";
+			//citation for drawing ball : http://www.w3schools.com/tags/canvas_arc.asp
+			context.arc(this.x, this.y, this.rad, 0, 2 * Math.PI);
+			context.fill();
+		}
+		
+		//updates the ball position, speed, winner and score
+		this.update = function()
+		{
+				
+			if(score1 > 5 && score2 > 5 && flag ==0)
+			{
+				flag = 1;
+				if(this.speedx >0)
+					this.speedx += 5;
+				else
+					this.speedx -= 5;
+					
+				if(this.speedy >0)
+					this.speedy += 5;
+				else
+					this.speedy -= 5;
+			}
+			//determines winner, otherwise keep playing with ball speed(direction) change
+			if(this.x < 0)
+			{
+				isWinner = true;
+				winner = 2;
+			}
+			else if(this.x > 1366 - this.rad)
+			{
+				isWinner = true;
+				winner = 1;
+			}
+			else
+			{
+				//top of the canvas condition
+				if(this.y < 0)
+				{
+					this.y = 0;
+					this.speedy = this.speedy * -1;
+				}
+				//bottom of canvas condition
+				if(this.y > 680 - this.rad)
+				{
+					this.y = 680 - this.rad;
+					this.speedy = this.speedy * -1;
+				}
+				//if ball hits bat 1 sides
+				if(this.x > player1.x && this.x - 10 < player1.x + player1.batW)
+				{
+					if(this.y > player1.y && this.y < player1.y + player1.batH)
+					{
+						this.speedx = this.speedx * -1;
+						score1++;
+					}
+				}
+				//if ball hits bat 2 sides
+				if(this.x + 10 > player2.x )
+				{
+					if(this.y > player2.y && this.y < player2.y + player2.batH)
+					{
+						this.speedx = this.speedx * -1;
+						score2++;
+					}
+				}
+				//moves the ball	
+				this.x = this.x + this.speedx;
+				this.y = this.y + this.speedy;
+			}
+		}
+	}
+	
+	//citation: http://www.w3schools.com/games/game_components.asp
+	function bat(number)
+	{
+		this.number = number;
+		this.color;
+		if(this.number == 1)
+			this.color = "blue";
+		else
+			this.color = "green";
+		
+		this.batW = 20;
+		
+		if(score1 < 5 && score2 < 5)
+			this.batH = 200;
+		else	
+			this.batH = 100;
+	
+		//bat 1 and bat 2
+		if(number == 1)
+			this.x = 0;
+		else
+			this.x = 1346;
+		this.y = 340 - (this.batH/2);
+		
+		//draws bat onto the canvas
+		this.draw = function()
+		{
+			//citation for drawing bat: http://www.w3schools.com/tags/canvas_fillrect.asp
+			context.fillStyle = this.color;
+			context.fillRect(this.x, this.y, this.batW, this.batH);
+		}
+		//updates the bat positions and sizes
+		this.update = function()
+		{
+			//bat sizes for normal and advanced modes
+			if(score1 < 5 && score2 < 5)
+				this.batH = 200;
+			else	
+				this.batH = 100;
+			
+			//player 1 bat
+			if(this.number == 1)
+			{
+				//move the bat up or down depending on the key pressed
+				if(control.p1.down && this.y < 680 - this.batH)
+					this.y = this.y + 10;
+				if(control.p1.up && this.y > 0)
+					this.y = this.y - 10;
+			}
+			//player 2 bat
+			else
+			{
+				//move the bat up or down depending on the key pressed
+				if(control.p2.down && this.y < 680 - this.batH)
+					this.y = this.y + 10;
+				if(control.p2.up && this.y >0)
+					this.y = this.y - 10;
+			
+			}
+		}	
+	}
+	//function that is called in setInterval (that keeps looping)
+	function draw()
+	{
+		//citation for placing the message over the canvas: http://www.w3schools.com/tags/canvas_globalcompositeoperation.asp
+		context.globalCompositeOperation = "source-over";
+		context.fillStyle = "white";
+		context.fillRect(0,0,1366,680);
+		
+		if(isWinner != false)
+		{
+			var scorea = "score: " + score1;
+			var scoreb = "score: " + score2;
+			//displays winner messages
+			if(winner == 1)
+			{
+				context.font = "50px Arial";
+				context.fillStyle = "black";
+				context.fillText("BLUE WINS!!!",683,300);
+				context.fillText(scorea,683,340);
+			}
+			if(winner ==2)
+			{
+				context.font = "50px Arial";
+				context.fillStyle = "black";
+				context.fillText("GREEN WINS!!!",683,300);
+				context.fillText(scoreb,683,340);
+			}
+		}
+		else
+		{
+			//calls the draw and update functions for the player's bats and the ball
+			player1.draw();
+			player1.update();
+			player2.draw();
+			player2.update();
+			ball.draw();
+			ball.update();
+			
+			//displayes the score on the board
+			context.font = "15px Arial";
+			context.fillStyle = "black";
+			context.fillText("Blue: " + score1, 683, 35);
+			context.fillText("Green: " + score2, 683, 55);
+		}
+	}
+	
+	//citation for controllers: Kousik Sundara Padmanabhan
+	function keyUp(event)
+	{
+		switch(event.which)
+		{
+			//W key
+			case 87:
+					control.p1.up = false;
+				break;
+			//S key
+			case 83:
+					control.p1.down = false;
+				break;
+			//up arrow key
+			case 38:
+					control.p2.up = false;
+				break;
+			//down arrow key
+			case 40:
+					control.p2.down = false;
+				break;
+		}
+	}
+	function keyDown(event)
+	{
+		console.log(event.which);
+		
+		switch(event.which)
+		{
+			//W key
+			case 87:
+					control.p1.up = true;
+				break;
+			//S key
+			case 83:
+					control.p1.down = true;
+				break;
+			//up arrow key
+			case 38:
+					control.p2.up = true;
+				break;
+			//down arrow key
+			case 40:
+					control.p2.down = true;
+				break;
+		}
+	}
+	document.addEventListener("keydown", keyDown);
+	document.addEventListener("keyup", keyUp);
+}
+
+//citation: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+function random(min, max)
+{
+	return Math.floor(Math.random() * (max-min+1) + min);
+}
+</script>
+</head>
+
+<body>
+	<canvas id = "canvas" style="border:1px solid #000000;"></canvas>
+</body>
+</html>
